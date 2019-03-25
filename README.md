@@ -143,7 +143,7 @@ Organization of Webpage:
 ```<datalist>``` is for autocompletion
 
 
-### CSS: Cascading Style sheets
+### CSS: Cascading Style Sheets
 - add style to html pages
 - separate content from design
 - reuse code
@@ -198,14 +198,15 @@ Selecting Elements of the tree structure for styling:
   <li>three</li>
 </ul>
 ```
-
-| a, b | Multiple Element Selector |
-| a b | Descendant Selector | 
-| a > b | Immediate Child Selector | 
+| Syntax| Selector                  |
+|:-----:| :-------------------------|
+| a, b  | Multiple Element Selector |
+|  a b  | Descendant Selector       | 
+| a > b | Immediate Child Selector  | 
 | a + b | Adjacent Sibling Selector |
-| [a=b] | Attribute Selector | 
-| a:b | Pseudoclass Selector | 
-| a::b | Pseudoelement Selector | 
+| [a=b] | Attribute Selector        | 
+|  a:b  | Pseudoclass Selector      | 
+| a::b  | Pseudoelement Selector    | 
 
 ```ol li {...}``` selects all li elements inside an ol element (one and two) => " " = "Descendant selector"
 ```ol > li {...}``` only selects li elements that are immediate children of ol (only one) => ">" = "Immediate child selector"
@@ -291,7 +292,7 @@ Bootstrap:
 - Every page devided in 12 columns, bootstrap has a grid-layout
 - ```div class="col-3"``` is a div that takes up 3 of those 12 columns
 - ```col-lg-3 col-sm-6``` on a large screen 3 columns, on small one 6 columns
-- website: [getbootstrap.com](getbootstrap.com)
+- website: [getbootstrap.com](www.getbootstrap.com)
 
 
 ### Sass
@@ -345,6 +346,324 @@ Inheritance in Sass
   background-color: green;
 }
 ```
+
+### Python
+```print("Hello, world!")```
+```name = input()``` # define variable storing input
+```print(f"hello, {name}!")``` # format-string
+```print("{} squared is {}".format(i, square(i)))```
+```
+for i in range(5):
+  print(i)
+```
+```
+dictionary = {"A": 1, "Key": value}
+dictionary["B"] = 2
+```
+
+To use custom.py files as modules, declare everything as functions, especially declare the main code as main function and add a call to it (see last two lines in following example), otherwise the code would be run if only one function of .py file is imported somwhere else: 
+example: functions.py
+```
+def square(x): // a function we want to reuse later
+  return x * x
+
+def main(): // the main job of the .py file
+  for i in range(10):
+    print ("{} squared is {}".format(i, square(i)))
+
+if __name__ == "__main__": //special syntax to run with 'python functions.py'
+  main()
+```
+
+Classes: 
+```
+class Point: 
+  def __init__(self, x, y):
+    self.x = x
+    self.y = y
+
+point = Point(3, 5)
+print(point.x)
+```
+
+### Flask
+- micro-framework to generate websites
+- written in python
+- start flask with command ```flask run```
+- environment variable has to be set, so that flask knows which file is the starting point: ```export FLASK_APP=application.py```
+
+
+main file: application.py
+```
+from flask import Flask # import the flask module
+app = Flask(__name__)   # create new flask-webapplication represented by current file
+
+# route determines which file you request, simple / is default page
+@app.route("/") # decorator-line, if / is requested, function below is executed
+def index():    # Function is executed which prints "Hello, world!"
+  return "Hello, world!"
+```
+
+making the route react to any name we get a dynamic webpage
+```
+@app.route("/<string:name")
+def hello(name):
+  name = name.capitalize()
+  return f"<h1>Hello, {name}!</h1>"
+```
+
+Now we tie html and the power of python together: 
+```
+from flask import Flask, render_template
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+  headline = "Hello, world!"
+  return render_template("index.html", headline=headline) // display the index.html file
+```
+```
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Website</title>
+  </head>
+  <body>
+    <h1>{{ headline }}</h1> // headline will be filled in as variable when rendering occurs
+  </body>
+</html>
+```
+the {{ }} is Element of the language ginger2
+with this syntax we can create if-else-statements: 
+```
+<body>
+  {% if new_year %}
+    <h1>Yes! Happy New Year!</h1>
+  {% else %}
+    <h1>NO</h1>
+  {% endif %}
+</body>
+```
+we can also generate Loops: 
+```
+<body>
+  <h1>Names</h1>
+  <ul>
+    {% for name in names %} //names being a python list provided via render_tamplate
+      <li>{{ name }}</li>
+    {% endfor %}
+  </ul>
+</body>
+```
+
+Create a reference: 'more' and 'index' are the names of the python functions
+```<a href="{{ url_for('more') }}">See more...</a>```
+```<a href="{{ url_for('index') }}">Go back...</a>```
+
+
+Template inheritance: 
+- factor out code that is identical in the different html-files: 
+
+layout.html is: 
+```
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Website</title>
+  </head>
+  <body>
+    <h1>{% block heading %}{% endblock %}</h1>
+    {% block body %}{% endblock %}
+  </body>
+</html>
+```
+
+then index.html just extends this file: 
+```
+{% extends "layout.html" %}
+{% block heading %}First Page{% endblock %}
+{% block body %}
+  <p>Some text</p>
+  <a href="{{ url_for('more') }}">See more...</a>"
+{% endblock %}
+```
+
+and more.html looks quite similar: 
+```
+{% extends "layout.html" %}
+{% block heading %}Second Page{% endblock %}
+{% block body %}
+  <p>Some other text</p>
+  <a href="{{ url_for('index') }}">Go back to first page.</a>"
+{% endblock %}
+```
+
+Forms in Flask: 
+```
+from flask import Flask, render_template, request
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+  return render_template("index.html")
+
+@app.route("/hello", methods=["Post"]) // to this route, data will be submitted via post
+def hello():
+  name = request.form.get("name")
+  return render_template("hello.html", name=name)
+```
+
+index.html: here we can fill our name in, submitting will trigger the hello fuction and pass the data over to it
+```
+{% extends "layout.html" %}
+{% block heading %}First Page{% endblock %}
+{% block body %}
+  # Action says where should form be submitted to
+  # method is the kind of HTTP-request we need
+  <form action="{{ url_for('hello') }}" method="post">
+    <input type="text" name="name" placeholder="Enter Your Name"
+    <button>Submit</button>
+  </form>
+{% endblock %}
+```
+
+hello.html: takes the name the user just inserted and returns a dynamically generated page
+```
+{% extends "layout.html" %}
+{% block heading %}Hello!{% endblock %}
+{% block body %}
+  Hello, {{ name }}!
+{% endblock %}
+```
+
+Sessions: store data specific to user account and retrieve it later
+Example: Note taking application.py
+```
+#Option 1: One global list of notes shared across users
+from flask import Flask, render_template, request, session
+from flas_session import Session
+app = Flask(__name__)
+
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+
+notes = [] # list as global variable shared across whole server
+
+@app.route("/", mehtods=["GET", "POST"])
+def index():
+  if request.method == "POST": 
+    note = request.form.get("note")
+    notes.append(note) #save the newly received note in list
+  return render_template("index.html", notes=notes) #render page again
+```
+
+```
+#Option 2: Notes tied to individual sessions: 
+from flask import Flask, render_template, request, session
+from flas_session import Session
+app = Flask(__name__)
+
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+
+@app.route("/", mehtods=["GET", "POST"])
+def index():
+  if session.get("notes") is None: 
+    session["notes"] = [] # define new list for notes that's only available to one user/session
+  if request.method == "POST": 
+    note = request.form.get("note")
+    session["notes"].append(note) #save the newly received note in list
+  return render_template("index.html", notes=session["notes"]) #render page again
+```
+
+```
+#index.html
+{% extends "layout.html" %}
+{% block heading %}First Page{% endblock %}
+{% block body %}
+  <ul>
+    {% for note in notes %} #print all the notes
+      <li>{{ note }}</li>
+    {% endfor %}
+  </ul>
+
+  <form action="{{ url_for('index') }}" method="post">
+    <input type="text" name="note" placeholder="Enter Note Here"
+    <button>Add Note</button>
+  </form>
+{% endblock %}
+```
+
+### SQL (PostgreSQL)
+- Language to interact with databases
+- Data Types: Integer, Decimal, Serial (automatic increase), Varchar (variable length character), Timestamp, Boolean, Enum (one of discrete possible values)
+- Constraints: NOT NULL, UNIQUE, PRIMARY KEY, DEFAULT, CHECK
+- Functions: SUM, COUNT, MIN, MAX, AVG
+
+```
+CREATE TABLE flights (
+  id SERIAL PRIMARY KEY,         // primary way to reference a flight
+  origin VARCHAR NOT NULL,       // origin column cannot be empty, constraint
+  destination VARCHAR NOT NULL,  // text for destination
+  duration INTEGER NOT NULL      // every flight has a duration
+);
+```
+
+Commands in terminal: 
+- ```psql``` let's you type in Postgres commands
+- ```\d``` shows all data in database
+
+```
+INSERT INTO flights 
+  (origin, destination, duration)
+  VALUES ('New York', 'London', 415);
+```
+```
+SELECT * FROM flights; 
+SELECT origin, destination FROM flights; 
+SELECT * FROM flights WHERE id = 3; 
+SELECT * FROM flights WHERE duration > 500 AND destination = 'Paris'; 
+SELECT * FROM flights WHERE origin LIKE '%a%'; // origin has a in it
+SELECT * FROM flights WHERE origin IN ('New York', 'Moscow', 'Lima');
+SELECT AVG(duration) FROM flights WHERE origin = 'New York'; 
+SELECT COUNT(*) FROM flights; 
+SELECT * FROM flights LIMIT 2; 
+SELECT * FROM flights ORDER BY duration ASC LIMIT 3; // the three shortest flights 
+SELECT origin, COUNT(*) FROM flights GROUP BY origin;
+SELECT origin, COUNT(*) FROM flights GROUP BY origin HAVING COUNT(*) > 1;  
+```
+```
+UPDATE flights
+  SET duration = 430
+  WHERE origin = 'New York'
+  AND destination = 'London'; 
+```
+```
+DELETE FROM flights
+  WHERE destination = 'Tokyo'; 
+```
+
+Foreign Keys: 
+```
+CREATE TABLE passengers (
+  id SERIAL PRIMARY KEY, 
+  name VARCHAR NOT NULL, 
+  flight_id INTEGER REFERENCES flights
+);
+```
+
+```
+SLEECT origin, destination, name //two columns from flights, one from passengers
+  FROM flights JOIN passengers // default is inner join = only things that match
+  ON passengers.flight_id = flights.id; 
+```
+Joins: 
+- INNER JOIN (=default): both have to match
+- LEFT JOIN: all elements from left table are in result
+- RIGHT JOIN: all elements from right table are in result
+
 
 
 
