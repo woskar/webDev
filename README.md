@@ -665,6 +665,214 @@ Joins:
 - RIGHT JOIN: all elements from right table are in result
 
 
+Hacking via SQL-Injection: 
+```
+SELECT * FROM users
+WHERE (username = username)
+AND (password = password);
+```
+
+```
+Hakcer uses:
+username: hacker
+password: 1' OR '1' = '1
+```
+
+leads to ```password = '1' OR '1' = '1'``` which returns true
+this type of problem has to be avoided, check user-input first, then execute query.
+
+Race Conditions: 
+operations in messed-up order can lead to problems.
+Solution: Use Transactions, which have to be executed without interruption.
+SQL-commands: ```Begin``` and ```Commit```
+
+
+SQLAlchemy: Pyhton-Library to run SQL-queries with python code.
+```
+# list.py
+# Run Select query with python and display the results
+
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+# create engine which "talks" to the database
+engine = create_engine(os.getenv("DATABASE_URL")) #Environment variables
+# creating different sessions for different people in the next line
+db = scoped_session(sessionmaker(bind=engine))
+
+def main(): 
+  # Run query on db-instance and fetchall=get all the results
+  flights = db.execute("SELECT origin, destination, duration FROM flights").fetchall()
+  # flights is list of all results
+  for flight in flights: 
+    print(f"{flight.origin} to {flight.destination} minutes.")
+
+if __name__ == "__main__":
+  main()
+```
+
+```
+# import.py
+# INSERT into database with python
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
+
+def main():
+  # open file that contains data to be imported
+  f = open("flights.csv")
+  # import csv file with module csv
+  reader = csv.reader(f)
+  # loop over every line the reader has
+  for orig, dest, dur in reader: 
+    db.execute("INSERT INTO flights (origin, destination, duration) VALUES
+                (:origin, : destination, :duration)", # use colon-syntax for :placeholder
+                {"origin": orig, "destination": dest, "duration": dur}) # dictionary with elements "placeholder": element; note: this notation is save (SQL-injections etc)
+    print(f"Added flight from {orig} to {dest} lasting {dur} minutes.")
+    db.commit() #do the transaction, save the changes
+
+if __name__ == "__main__":
+  main()
+```
+```
+# passengers.py
+# Gives text-based way to what passengers are on the flight
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
+
+def main():
+  # List all flights. 
+  flights = db.execute("SELECT id, origin, destination, duration FROM flights").fetchall()
+  # print resulting rows to screen
+  for flight in flights: 
+    print(f"Flight {flight.id}: {flight.origin} to {flight.destination}, {flight.duration} minutes.")
+
+  # Prompt user to choose a flight
+  flight_id = int(input"\nFlight ID: "))
+  flight = db.execute("SELECT origin, destination, duration FROM flights WHERE id = :id",
+                       {"id": flight_id}).fetchone()
+  # if no result: just print error message
+  if flight is None: 
+    print("Error: No such flight.")
+    return 
+  # else list passengers
+  passengers = db.execute("SELECT name from passengers WHERE flight_id = :flight_id",
+                           {"flight_id": flight_id}).fetchall()
+  print("\nPassengers:")
+  for passenger in passengers: 
+    print(passenger.name)
+  if len(passengers) == 0: 
+    print("No passengers.")
+```
+Using SQLAlchemie inside of an Flask-Application: 
+```
+# application.py
+import os
+from flask import Flask, render_template, request
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+app = Flask(__name__)
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
+
+@app.route("/") # default route
+def index(): 
+  # get flights with SELECT query
+  flights = db.execute("SELECT * FROM flights").fetchall()
+  # render site with those selected flights
+  return render_template("index.html", flights=flights)
+
+@app.route("/book", methods=["POST"])
+def book(): 
+  """Book a flight."""
+
+  # Get form information (being the name) and save it in the variable called name
+  name = request.form.get("name")
+  try:
+    flight_id = int(request.form.get("flight_id")) #refers to drop-down-menu in index.html
+  # if converting to an integer fails present Error via the error-html-page
+  except ValueError:
+    return render_template("error.html", message="Invalid flight number.")
+
+  # Now we have a int-number (flight_id), make sure that a flight exists with this id.
+  # .rowcount is operator which returns the number of rows of the query-results
+  if db.execute("SELECT * FROM flights WHERE id = :id", {"id": flight_id}).rowcount == 0:
+    # no flights have the id flight_id
+    return render_template("error.html", message="No such flight with that id.")
+  # else we have a valid flight_id
+  db.execute("INSERT INTO passengers (name, flight_id) VALUES (:name, :flight_id)", 
+              {"name": name, "flight_id": flight_id})
+  db.commit()
+  return render_template("success.html")
+
+```
+```
+<!-- layout.html-->
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>{% block title %}{% endblock %}</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrap.com/bootstrap" </head>
+  </head>
+  <bod>
+      <div class="container">
+        {% block body %}
+        {% endblock %}
+  </bod>
+</html>
+```
+```
+<!--index.html-->
+{% extends "layout.html" %}
+{% block title %}Flights{% endblock %}
+{% block body %}
+  <h1>Book a Flight</h1>
+  <!-- Form with post request to the function called book -->
+  <form action="{{ url_for('book') }}" method="post">
+    <div class="form-group">
+      <select class="form-control" name=flight_id">
+        <!-- loop over the flights that are given as list in application.py-->
+        {% for flight in flights %}
+          <!-- double curly braces {{ }} are used to plug in values -->
+          <option value="{{ flight.id }}">{{ flight.origin }} to {{ flight.destination }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <input class="form-control" name="name" placeholder="Passenger Name">
+    </div>
+    <div class="form-group">
+      <button class="btn btn-primary">Book Flight</button>   
+    </div>
+  </form>
+{% endblock %}
+```
+```
+<!-- error.html -->
+{% extends "layout.html" %}
+{% block title %}Error{% endblock %}
+{% block body %}
+  <h1>Error</h1>
+  {{ message }}
+{% endblock %}
+```
+```
+<!-- success.html -->
+{% extends "layout.html" %}
+{% block title %}Sucess!{% endblock %}
+{% block body %}
+  <h1>Success!</h1>
+  You have successfully booked your flight.
+{% endblock %}
+```
+
 
 
 
