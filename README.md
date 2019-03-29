@@ -812,6 +812,26 @@ def book():
   db.commit()
   return render_template("success.html")
 
+@app.route("/flights")
+def flights():
+  """Lists all flights."""
+  flights = db.execute("SELECT * FROM flights").fetchall()
+  return render_template("flights.html", flights=flights)
+
+@app.route("/flights/<int:flight_id>")
+def flight(flight_id):
+  """Lists details about a single flight."""
+
+  # Make sure flight exists.
+  flights = db.execute("SELECT * FROM flights WHERE id = :id", {"id": flight_id}).fetchone()
+  if flight is None:
+    return render_template("error.html", message="No such flight.")
+
+  # else we can continue to get all passengers
+  passengers = db.execute("SELECT name FROM passengers WHERE flight_id = :flight_id",
+                          {"flight_id": flight_id}).fetchall()
+  return render_template("flight.html", flight=flight, passengers=passengers)
+
 ```
 ```
 <!-- layout.html-->
@@ -872,9 +892,46 @@ def book():
   You have successfully booked your flight.
 {% endblock %}
 ```
+```
+<!-- flights.html -->
+{% extends "layout.html" %}
+{% block title %}Flights{% endblock %}
+{% block body %}
+  <h1>All Flights</h1>
+  <ul>
+    {% for flight in flights %}
+      <li>
+        <!-- flight_id is inserted in function flights in application.py -->
+        <a href="{{ url_for('flight', flight_id=flight.id) }}">
+          {{ flight.origin }} to {{ flight.destination}}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
+```
+```
+<!-- flight.html -->
+{% extends "layout.html" %}
+{% block title %}Flight{% endblock %}
+{% block body %}
+  <h1>Flight Details</h1>
+  <ul>
+    <li>Origin: {{ flight.origin }}</li>
+    <li>Destination: {{ flight.destination }}</li>
+    <li>Duration: {{ flight.duration }} minutes</li>
+  </ul>
 
-
-
+  <h2>Passengers</h2>
+  <ul>
+    {% for passenger in passengers %}
+      <li>{{ passenger.name }}</li>
+    {% else %}
+      <li>No passengers.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
+```
 
 
 
