@@ -933,9 +933,90 @@ def flight(flight_id):
 {% endblock %}
 ```
 
+Lecture ORM and API's
+
+### Object-Oriented Programming
+
+```
+#classes.py
+#easy example for a class in python
+
+class Flight: 
+
+  counter = 1
+
+  # init method is a special method to declare/initialize objects
+  def __init__(self, origin, destination, duration):
+
+    # Keep track of id number
+    self.id = Flight.counter
+    Flight.counter += 1
+
+    # Keep track of passengers
+    self.passengers = []
+
+    # self references object, could be named something else, calling it self is convention
+    self.origin = origin
+    self.destination = destination
+    self.duration = duration
+
+  # method to print information
+  def print_info(self): 
+    print(f"Flight origin: {self.origin}")
+    print(f"Flight destination: {self.destination}")
+    print(f"Flight duration: {self.duration}")
+    print()
+    print("Passengers:")
+    for passenger in self.passengers: 
+      print(f"{passenger.name}")
 
 
+  def delay(self, amount): 
+    self.duration += amount
 
+  def add_passenger(self, p): 
+    self.passengers.append(p)
+    p.flight_id = self.id
+
+class Passenger: 
+
+  def __init__(self, name):
+    self.name = name
+
+
+def main():
+  # create flight
+  # self argument is implicit doesn't have to be stated
+  # optional to name types if parameters in right order
+  f1 = Flight(origin="New York", destination="Paris", duration=540)
+
+  # create passengers
+  alice = Passenger(name="Alice")
+  bob = Passenger(name="Bob")
+
+  # add passengers
+  f1.add_passenger(alice)
+  f1.add_passenger(bob)
+
+  # change values
+  f1.duration += 10
+
+  # read values
+  print(f1.origin)
+  f1.print_info()
+  f1.delay(10)
+  f1.print_info()
+
+if __name__ == "__main__":
+  main()
+```
+
+### Object-Relational Mapping (ORM)
+tie the two worlds of objects in python and SQL databases together
+using Flasd-SQLAlchemy
+
+#models.py
+#
 
 
 
