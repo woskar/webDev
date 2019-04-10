@@ -1015,8 +1015,63 @@ if __name__ == "__main__":
 tie the two worlds of objects in python and SQL databases together
 using Flasd-SQLAlchemy
 
-#models.py
-#
+```
+# models.py
+# define database-model
+# key idea: for every table in the database, there's one class in this models-file
+
+from flask_sqlalchemy import SQLAlchemy
+db = SQLAlchemy()
+
+class Flight(db.Model):
+  # class Flight should correspond with the table-name flights
+  __tablename__ = "flights"
+  # define Columns inside the flights-table
+  id = db.Column(db.Integer, primary_key=True)
+  origin = db.Column(db.String, nullable=False)
+  destination = db.Column(db.String, nullable=False)
+  duration = db.Column(db.Integer, nullable=False)
+
+class Passenger(db.Model): 
+  __tablename__ = "passengers"
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String, nullable=False)
+  flight_id = db.Column(db.Integer, db.ForeignKey("flights.id"), nullable=False)
+
+# up to there the CREATE TABLE-syntax is basically rewritten in python code.
+'''
+so the above corresponds to: 
+CREATE TABLE flights (
+  id SERIAL PRIMARY KEY,
+  origin VARCHAR NOT NULL, 
+  destination VARCHAR NOT NULL, 
+  duration VARCHAR NOT NULL
+);
+'''
+# the actual creation is done via the command
+# db.create_all()
+```
+
+# create.py
+# python file to create database
+
+from flask import Flask, render_template, request
+from models import *
+
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)
+
+def main():
+  db.create_all()
+
+if __name__ == "__main__":
+  with app.app_context():
+    main()
+
+
+
 
 
 
