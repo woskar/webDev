@@ -1051,25 +1051,178 @@ CREATE TABLE flights (
 # the actual creation is done via the command
 # db.create_all()
 ```
-
+```
 # create.py
 # python file to create database
 
 from flask import Flask, render_template, request
-from models import *
+from models import * # our file defined above to define the classes/tables
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app)
+db.init_app(app) # tie this database with this flask application
 
 def main():
   db.create_all()
 
 if __name__ == "__main__":
-  with app.app_context():
+  with app.app_context(): # we need this to properly interact with flask-application
     main()
+```
 
+Translating SQL into SQLAlchemy-Python-Syntax: 
+
+```
+INSERT INTO flights
+  (origin, destination, duration)
+  VALUES
+  ('New York', 'Paris', 540)
+```
+corresponds to
+```
+flight = Flight(origin="New York", destination="Paris", duration="540")
+db.session.add(flight)
+```
++
+```
+SELECT * FROM flights; 
+```
+corresponds to
+```
+Flight.query.all()
+```
++
+```
+SELECT * FROM flights WHERE origin = 'Paris'; 
+```
+corresponds to
+```
+Flight.query.filter_by(origin="Paris").all()
+```
++
+only select one element
+```
+SELECT * FROM flights WHERE origin = 'Paris' LIMIT 1;
+```
+corresponds to
+```
+Flight.query.filter_by(origin="Paris").first()
+```
++
+```
+SELECT * FROM flights WHERE id = 28;
+```
+corresponds to either one of the following
+```
+Flight.query.filter_by(id=28).first()
+Flight.query.get(28) # returns none if no id=28 
+```
++
+count objects
+```
+SELECT COUNT(*) FROM flights WHERE origin = 'Paris';
+```
+corresponds to
+```
+Flight.query.filter_by(origin="Paris").count()
+```
+
+
+Example for importing from csv-file into database: 
+```
+f = open("flights.csv")
+reader = csv.reader(f)
+for origin, destination, duration in reader: 
+  flight = Flight(origin=origin, destination=destination, duration=duration)
+  db.session.add(flight) # add this flight to database, equiv. to INSERT command
+  print(f"Added flight from {origin} to {destination} lasting {duration})
+db.session.commit() # make the change happen
+```
+Example for listing results of a query
+```
+flights = Flight.query.all() # returns objects
+for flight in flights:  # loop over objects
+  print(f"{flight.origin} to {flight.destination}) # print values
+```
+
+
+Updating table-entries: 
+```
+UPDATE flights SET duration = 280 WEHRE id = 6; 
+```
+=
+```
+flight = Flight.query.get(6)
+flight.duration = 280
+```
+
+Delete table-entries: 
+```
+DELETE FROM flights WHERE id = 28;
+```
+=
+```
+flight = Flight.query.get(28)
+db.session.delete(flight)
+```
+
+Get ordered set of results: 
+```
+SELECT * FROM flights ORDER BY origin DESC; 
+```
+=
+```
+Flight.query.oder_by(Flight.origin.desc()).all()
+```
+
+Select all except for special constraints: 
+```
+SELECT * FROM flights WHERE origin != "Paris"
+```
+=
+```
+Flight.query.filter(Flight.origin != "Paris").all()
+```
+
+Select flights that contain letter 'a' within them: 
+```
+SELECT * FROM flights WHERE origin LIKE "%a%"
+```
+=
+```
+Flight.query.filter(Flight.origin.like("%a%")).all()
+```
+
+Selection contained in list:
+```
+SELECT * FROM flights WHERE origin IN ('Tokyo', 'Paris');
+```
+=
+```
+Flight.query.filter(Flight.origin.in_(["Tokyo", "Paris"])).all()
+# in_ with underscore because in is a python keyword
+```
+
+Combined boolean expressions
+```
+SELECT * FROM flights WHERE origin = "Paris" AND duration > 500; 
+```
+=
+```
+Flight.query.filter(and_(Flight.origin == "Paris", Flight.duration > 500)).all()
+# similarly or_
+```
+
+Joining multiple tables together: 
+```
+SELECT * FROM flights JOIN passengers ON flights.id = passengers.flight_id; 
+```
+= 
+```
+db.session.query(Flight, Passenger).filter(
+  Flight.id == Passenger.flight_id).all()
+```
 
 
 
