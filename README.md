@@ -1201,10 +1201,161 @@ db.session.query(Flight, Passenger).filter(
   Flight.id == Passenger.flight_id).all()
 ```
 
+### Usage of SQL-Alchemy in bigger Example
+See Example application.py in folder "04 Airline ORM": 
+- start by: cd into folder, then ```flask run```
+- similar to airline-example above
+- this time no explicit SQL-Code, instead SQLAlchemy statements
+- note the function add_passenger in models.py with database-interaction
+- Example of a relationship in models.py: flight gets the relationship passengers, so we can access the passengers-table as if it was part of the flights-table itself
 
 
+### Relationships
+Making syntax for selecting elements easier: 
+SQL: ```SELECT * FROM passengers WHERE flight_id = 1;```
+SQLAlchemy+Relationships: ```Flight.query.get(1).passengers```
+
+second example: 
+```
+SELECT * FROM flights 
+JOIN passengers 
+ON flights.id = passengers.flight_id
+WHERE passengers.name = 'Alice';
+```
+```
+Passenger.query.filter_by(name="Alice").first().flight
+```
+
+### APIs Application Programming Interfaces
+APIs are protocols for communication between different (parts/components of) web-applications to exchange information or trigger changes at some other place
+read the API-documentation to know how to interact, get and expect from it
+
+### JSON JavaScript Object Notation
+Language to represent data in a form that is computer- and human-readable.
+
+Example: JSON-Notation to represent data of a flight
+```
+{ # beginning a JSON-Object
+  "origin": "Tokyo", # contains key-value-pairs
+  "destination": "Shanghai", 
+  "duration": 185,
+  "passengers": ["Alice", "Bob"]
+}
+```
+example of nested JSON-structure: 
+```
+{
+  "origin": {
+    "city": "Tokyo", 
+    "code": "HND"
+  },
+  "destination": {
+    "city": "Shanghai", 
+    "code": "PVG"  
+  }, 
+  "duration": 185,
+  "passengers": ["Alice", "Bob"]
+}
+```
+how to access data? 
+often times via nested url-structure: 
+```
+/flights/ for all flights
+/flight/28/passengers/ for all passengers on flight 28
+```
+#### HTTP Methods
+| Method  | Description           |
+| ------- | --------------------- | 
+| GET:    | retrieve resource     | 
+| POST:   | create a new resource |
+| PUT:    | replace a resource    |
+| PATCH:  | update a resource     |
+| DELETE: | delete a resource     |
+
+#### HTTP Status Codes
+| Code | Meaning              |
+|------|----------------------|
+| 200  | Everything is OK     |
+| 201  | Something just Created|
+| 4XX  | Some type of error   |
+| 400  | Bad Request          |
+| 403  | Forbidden            |
+| 404  | Not Found            |
+| 405  | Method Not Allowed   |
+| 422  | Unprocessable Entity |
+| ...  | ...                  |
 
 
+use requests with python code using the ```requests```-module
+simple example to send a google request via a python-script: 
+```
+# google.py
+import requests
 
+def main(): 
+  res = request.get("https://www.google.com/")
+  print(res.text) # prints the html the browser should display
+
+if __name__ == "__main__":
+  main()
+```
+example with currency-API "fixer.io"
+```api.fixer.io/latest?base=USD&symbols=GBP```
+should return a result like this (now deprecated)
+```
+{
+  "base": USD, 
+  "date": "2018-02-26", 
+  "rates":{
+    "GBP": 0.71202
+  }
+}
+```
+now we can use this in a python program: 
+```
+# currency.py
+import requests
+
+def main(): 
+  res = request.get("https://api.fixer.io/latest?base=USD&symbols=EUR")
+  if res.status_code != 200:
+    raise Exception("ERROR: API request unsuccessful.")
+  data = res.json() # save the json of the response in variable data
+  print(data) # printing it like this will show user raw data - not good, unnecessary things should be left out. 
+
+  # filter out the important information and print it easily readable
+  rate = data["rates"]["EUR"]
+  print(f"1 USD is euqal to {rate} EUR")
+
+if __name__ == "__main__":
+  main()
+```
+more advanced version with variable currencies
+```
+# currency2.py
+import requests
+
+def main(): 
+  base = input("First Currency: ")
+  other = input("Second Currency: ")
+  res = request.get("https://api.fixer.io/latest"
+                    params={"base": base, "symbols": other})
+  if res.status_code != 200:
+    raise Exception("ERROR: API request unsuccessful.")
+  data = res.json()
+
+  rate = data["rates"][other]
+  print(f"1 {base} is euqal to {rate} {other}")
+
+if __name__ == "__main__":
+  main()
+```
+
+How to build our own API others can use?
+See the app.rout("/api/...") in application.py: 
+- allows others to send requests about flights
+- returns machine-readable JSON Object
+
+### JavaScript
 
 
